@@ -1,4 +1,3 @@
-#! /usr/bin/racket
 #lang racket/gui
 
 ; IFS Editor, November 2012 version
@@ -21,15 +20,13 @@
 (require racket/serialize)
 (require framework)
 
-(define vc-id "$Id: ifs-editor.rkt,v dfbaa1d8cd01 2012-11-08 15:41:05Z garrett $")
-
 (struct affine-transformation
-  (x0 y0 a b c d)
-  #:prefab)
+        (x0 y0 a b c d)
+        #:prefab)
 
 (struct plane-point
-  (x y)
-  #:prefab)
+        (x y)
+        #:prefab)
 
 (define (make-plane-point x0 y0)
   (plane-point
@@ -71,7 +68,7 @@
   (fl-
    (fl* (plane-point-x u) (plane-point-y v))
    (fl* (plane-point-y u) (plane-point-x v))))
-  
+
 (define (apply-affine-transformation at pt)
   (define x0 (affine-transformation-x0 at))
   (define y0 (affine-transformation-y0 at))
@@ -82,8 +79,8 @@
   (define x (plane-point-x pt))
   (define y (plane-point-y pt))
   (plane-point 
-   (fl+ x0 (fl* a x) (fl* b y))
-   (fl+ y0 (fl* c x) (fl* d y))) )
+   (fl+ x0 (fl+ (fl* a x) (fl* b y)))
+   (fl+ y0 (fl+ (fl* c x) (fl* d y))) ))
 
 (define (affine-transformation-fixed-point at)
   (define x0 (affine-transformation-x0 at))
@@ -113,14 +110,14 @@
   (define b1 (affine-transformation-b at1))
   (define c1 (affine-transformation-c at1))
   (define d1 (affine-transformation-d at1))
-
+  
   (define x2 (affine-transformation-x0 at2))
   (define y2 (affine-transformation-y0 at2))
   (define a2 (affine-transformation-a at2))
   (define b2 (affine-transformation-b at2))
   (define c2 (affine-transformation-c at2))
   (define d2 (affine-transformation-d at2))
-
+  
   (affine-transformation
    (fl+ x1 (fl+ (fl* a1 x2) (fl* b1 y2))) ;x3
    (fl+ y1 (fl+ (fl* c1 x2) (fl* d1 y2))) ;y3
@@ -153,18 +150,18 @@
   (define d (determinant at))
   (define disc (fl- (fl* t t) (fl* 4 d)))
   (list
-   (fl/ (fl+ (fl- t) (sqrt disc)) 2)
-   (fl/ (fl- (fl- t) (sqrt disc)) 2)) )
+   (fl/ (fl- t (sqrt disc)) -2)
+   (fl/ (fl+ t (sqrt disc)) -2)) )
 
 #;(define (singular-values at)
-   (match at
-    ((affine-transformation x0 y0 a b c d)
-     (define A (+ (* a a) (* b b) (* c c) (* d d)))
-     (define D (- (* a d) (* b c)))
-     (define Q (sqrt (- (* A A) (* 4 D))))
-     (list
-      (sqrt (/ (+ A Q) 2))
-      (sqrt (/ (- A Q) 2))))))
+    (match at
+      ((affine-transformation x0 y0 a b c d)
+       (define A (+ (* a a) (* b b) (* c c) (* d d)))
+       (define D (- (* a d) (* b c)))
+       (define Q (sqrt (- (* A A) (* 4 D))))
+       (list
+        (sqrt (/ (+ A Q) 2))
+        (sqrt (/ (- A Q) 2))))))
 
 (define (orientation at)
   (let ([d (determinant at)])
@@ -238,7 +235,7 @@
          (set-box!
           observers-box
           (remove observer (unbox observers-box))))) )
-      
+    
     (define/public (notify-observers hint-key hint)
       (define relevant-observers (unbox (hash-ref observers hint-key (box '()))))
       #;(display (format "notify-observers: ~s ~s ~s\n" this hint-key hint))
@@ -254,7 +251,7 @@
   (class*
       (observable-mixin
        object%)
-      
+    
     (draw<%> active<%> region<%>)
     
     (init-field
@@ -264,7 +261,7 @@
     (inherit notify-observers)
     
     (define drag-in-progress-flag #f)
-
+    
     (define/public (no-object-is-active?)
       (eq? 'none active-object))
     (define/public (an-object-is-active?)
@@ -275,17 +272,17 @@
     
     (define (find-object-at x y)
       (find-first
-        (lambda (obj) 
-          (send obj contains-point? x y))
-        managed-objects
-        'none))
+       (lambda (obj) 
+         (send obj contains-point? x y))
+       managed-objects
+       'none))
     
     (define/public (get-active-object)
       active-object)
     
     (define/public (contains-point? x y)
       (not (eq? 'none (find-object-at x y))))
-
+    
     (define/public (clear)
       (deactivate 0 0)
       (define (loop)
@@ -328,8 +325,8 @@
       (define click-end?
         (and button-change?
              (send mouse-event button-up? 'left)))
-     
-          
+      
+      
       (cond
         ; If the button is just clicked and no object is active, look for one
         [(and click-begin?
@@ -353,7 +350,7 @@
               (an-object-is-active?)
               (send active-object contains-point? x y))
          (begin-drag x y)]
-      
+        
         ; If the button is down and we're dragging, continue drag:
         [(and is-dragging?
               (an-object-is-active?)
@@ -366,10 +363,10 @@
               (drag-in-progress?))
          (end-drag x y)]
         ))
-
+    
     (define/public (activate x y)
       (define object-under-click (find-object-at x y))
- 
+      
       (cond
         [(not (eq? active-object object-under-click))
          (deactivate x y)
@@ -377,17 +374,17 @@
          (set! managed-objects
                (cons active-object
                      (remq active-object managed-objects)))])
-
+      
       (cond
         [(an-object-is-active?)
-          (send active-object activate x y)
-          (send this notify-observers 'activate active-object)]))
+         (send active-object activate x y)
+         (send this notify-observers 'activate active-object)]))
     
     (define/public (deactivate x y)
       (cond
         [(an-object-is-active?)
-          (send active-object deactivate x y)
-          (send this notify-observers 'deactivate active-object)])
+         (send active-object deactivate x y)
+         (send this notify-observers 'deactivate active-object)])
       (set! active-object 'none))
     
     (define/public (begin-drag x y)
@@ -482,7 +479,7 @@
     
     (define/public (active?)
       active-state)
-        
+    
     (super-new) ))
 
 (define square-handle%
@@ -495,14 +492,14 @@
      location
      size
      active-state)
-
+    
     (define/public (contains-point? x y)
       (define x0 (plane-point-x location))
       (define y0 (plane-point-y location))
       (and
        (<= (- x0 size) x (+ x0 size))
        (<= (- y0 size) y (+ y0 size))) )
-
+    
     (define/public (draw dc)
       (define x0 (plane-point-x location))
       (define y0 (plane-point-y location))
@@ -528,13 +525,13 @@
      size
      active-state)
     
-     (define/public (contains-point? x y)
+    (define/public (contains-point? x y)
       (<= (plane-point-norm-sq
            (plane-point-subtract
             (make-plane-point x y)
             location))
           (* size size)))
-      
+    
     (define/public (draw dc)
       (define x0 (plane-point-x location))
       (define y0 (plane-point-y location))
@@ -591,14 +588,14 @@
       deactivate)
     
     (inherit-field
-      active-object)
-
+     active-object)
+    
     (super-new)
-
+    
     (define location-handle
       (new square-handle%
            [location (send parent get-corner-1)]))
-
+    
     (define u-handle
       (new circle-handle% 
            [color u-color]
@@ -608,7 +605,7 @@
       (new circle-handle%
            [color v-color]
            [location (send parent get-corner-4)]))
-     
+    
     (define (location-handle-observer handle location-hint-key previous-location)
       (send parent set-location (send handle get-location))
       ; that updates the corners, so:
@@ -645,8 +642,8 @@
     (send location-handle add-observer '(location) location-handle-observer)
     (send u-handle add-observer '(location) u-handle-observer)
     (send v-handle add-observer '(location) v-handle-observer)
-
-
+    
+    
     (define/override (begin-drag x y)
       (activate x y)
       (super begin-drag x y)
@@ -737,8 +734,8 @@
       (and
        (<= 0 u-component 1)
        (<= 0 v-component 1)))
-
-      
+    
+    
     (define/public (contains-point? x y)
       (or (basic-contains-point? x y)
           (send state contains-point? x y)))
@@ -750,7 +747,7 @@
     (define/public (deactivate x y)
       (send state deactivate x y)
       (set! state inactive-state))
-
+    
     (define/public (begin-drag x y)
       (send state begin-drag x y))
     
@@ -759,7 +756,7 @@
     
     (define/public (end-drag x y)
       (send state end-drag x y))
-   
+    
     (define/public (draw dc)
       (basic-draw dc)
       (send state draw dc))
@@ -772,7 +769,7 @@
       (define u1 (plane-point-y u))
       (define v0 (plane-point-x v))
       (define v1 (plane-point-y v))
- 
+      
       (define main-outline (new dc-path%))
       (send* main-outline
         (move-to a0 a1)
@@ -785,7 +782,7 @@
       (send* u-edge
         (move-to a0 a1)
         (line-to (+ a0 u0) (+ a1 u1)))
-
+      
       (define v-edge (new dc-path%))
       (send* v-edge
         (move-to a0 a1)
@@ -810,7 +807,7 @@
         (set-pen v-color 2 'solid)
         (draw-path v-edge) ))
     
- ))
+    ))
 
 
 (define managed-canvas%
@@ -833,39 +830,39 @@
      (min-width (+ padding unit-size padding))
      (min-height (+ padding unit-size padding))
      (paint-callback
-          (lambda (this dc)
-            (define main-outline (new dc-path%))
-            (define u+padding (+ padding unit-size))
-            ; The unit square
-            (send* main-outline
-              (move-to padding padding)
-              (line-to padding u+padding)
-              (line-to u+padding u+padding)
-              (line-to u+padding padding)
-              (close))
-            
-            (define u-edge (new dc-path%))
-            (send* u-edge
-              (move-to padding u+padding)
-              (line-to u+padding u+padding))
-
-            (define v-edge (new dc-path%))
-            (send* v-edge
-              (move-to padding u+padding)
-              (line-to padding padding))
-      
-
-            (send* dc 
-              (set-smoothing 'smoothed)
-              (set-pen "black" 3 'solid)
-              (set-brush "black" 'transparent)
-              (draw-path main-outline)
-              (set-pen u-color 3 'solid)
-              (draw-path u-edge)
-              (set-pen v-color 3 'solid)
-              (draw-path v-edge))
-            
-            (send dispatcher draw dc))))
+      (lambda (this dc)
+        (define main-outline (new dc-path%))
+        (define u+padding (+ padding unit-size))
+        ; The unit square
+        (send* main-outline
+          (move-to padding padding)
+          (line-to padding u+padding)
+          (line-to u+padding u+padding)
+          (line-to u+padding padding)
+          (close))
+        
+        (define u-edge (new dc-path%))
+        (send* u-edge
+          (move-to padding u+padding)
+          (line-to u+padding u+padding))
+        
+        (define v-edge (new dc-path%))
+        (send* v-edge
+          (move-to padding u+padding)
+          (line-to padding padding))
+        
+        
+        (send* dc 
+          (set-smoothing 'smoothed)
+          (set-pen "black" 3 'solid)
+          (set-brush "black" 'transparent)
+          (draw-path main-outline)
+          (set-pen u-color 3 'solid)
+          (draw-path u-edge)
+          (set-pen v-color 3 'solid)
+          (draw-path v-edge))
+        
+        (send dispatcher draw dc))))
     
     (define (do-refresh object hint-key hint)
       (refresh))
@@ -895,7 +892,7 @@
   (define Q (send block get-location))
   (define Qx (n (plane-point-x Q)))
   (define Qy (n (plane-point-y Q)))
-
+  
   ; Cartesian plane coordinates:
   (define q
     (plane-point
@@ -937,35 +934,35 @@
     
     (define/public (run-when-done-callback)
       (when-done-callback))
-     
+    
     (define/public (set-affine-transformations at)
       (set! affine-transformations at)
       (set! bitmap #f)
       (fork-render))
-
+    
     (define (fork-render)
       (thread
        (lambda ()
          (set! bitmap 
-           (render-fractal-to-bitmap
-            affine-transformations
-            picture-size
-            (/ picture-size 2)
-            max-depth
-            (real->double-flonum size-threshold)))
+               (render-fractal-to-bitmap
+                affine-transformations
+                picture-size
+                (/ picture-size 2)
+                max-depth
+                (real->double-flonum size-threshold)))
          (refresh)
          (run-when-done-callback)
          )))
- 
+    
     (super-new
      [min-width (* 2 picture-size)]
      [min-height (* 2 picture-size)]
      [paint-callback
-        (lambda (c dc)
-          (cond
-            [bitmap
-             (send dc draw-bitmap bitmap 0 0) ]))])
-
+      (lambda (c dc)
+        (cond
+          [bitmap
+           (send dc draw-bitmap bitmap 0 0) ]))])
+    
     (fork-render)
     
     ))
@@ -991,7 +988,7 @@
          padding
          max-depth
          size-threshold)
-
+  
   (define color "black")
   (define size (inexact->exact 
                 (ceiling (+ (* 2 padding) picture-size))))
@@ -1004,7 +1001,7 @@
   (send* dc
     (translate padding (+ padding picture-size))
     (scale picture-size (- picture-size))
-    (set-pen color 0 'transparent)
+    (set-pen color 0 'solid)
     (set-brush color 'solid))
   
   (draw-ifs dc affine-transformation-identity affine-transformations
@@ -1013,16 +1010,29 @@
   bitmap)
 
 (define (draw-box-for dc at)
-  (define p (new dc-path%))
-  (match at
-    [(affine-transformation x0 y0 a b c d)
-     (send* p
-       (move-to x0 y0)
-       (line-to (+ x0 a) (+ y0 c))
-       (line-to (+ x0 a b) (+ y0 c d))
-       (line-to (+ x0 b) (+ y0 d))
-       (close))
-     (send dc draw-path p)]))
+  (define x0 (affine-transformation-x0 at))
+  (define y0 (affine-transformation-y0 at))
+  (define a (affine-transformation-a at))
+  (define b (affine-transformation-b at))
+  (define c (affine-transformation-c at))
+  (define d (affine-transformation-d at))
+  
+  (define x1 (fl+ x0 a))
+  (define y1 (fl+ y0 c))
+  
+  
+  (define x2 (fl+ x1 b))
+  (define y2 (fl+ y1 d))
+  
+  (define x3 (fl+ x0 b))
+  (define y3 (fl+ y0 d))
+
+  (send dc 
+        draw-polygon
+        (list (cons x0 y0)
+              (cons x1 y1)
+              (cons x2 y2)
+              (cons x3 y3))) )
 
 (define-syntax-rule
   (number-editor parent-object field-label variable)
@@ -1098,7 +1108,7 @@
   (define b (affine-transformation-b at))
   (define c (affine-transformation-c at))
   (define d (affine-transformation-d at))
-
+  
   (define result #f)
   
   (define df
@@ -1109,7 +1119,7 @@
   (define v-box
     (new vertical-panel%
          [parent df]))
-
+  
   (number-editor v-box "x0" x0)
   (number-editor v-box "y0" y0)
   (number-editor v-box "a" a)
@@ -1154,7 +1164,7 @@
   (define preview-picture-size (/ unit-size 2))
   (define preview-size-threshold (* 32 drawing-size-threshold))
   (define ats '())
-    
+  
   (define (new-default-block m)
     (send* m 
       (add-managed-object
@@ -1165,7 +1175,7 @@
             [u (make-plane-point half-unit 0)]
             [v (make-plane-point 0 (- half-unit))]))
       (activate (+ west half-unit) (- south half-unit))))
- 
+  
   (define (affine-transformation->block at)
     (define x0 (affine-transformation-x0 at))
     (define y0 (affine-transformation-y0 at))
@@ -1201,12 +1211,12 @@
             [location (make-plane-point west (- south half-unit))]
             [u (make-plane-point half-unit 0)]
             [v (make-plane-point 0 (- half-unit))])) ))
-      
+  
   
   (define frame
     (new frame%
          [label "Canvas"]))
-
+  
   (define v-box
     (new vertical-panel%
          [parent frame]))
@@ -1214,7 +1224,7 @@
   (define button-box
     (new horizontal-panel%
          [parent v-box]))
-
+  
   (define h-box-main
     (new horizontal-panel%
          [parent v-box]))
@@ -1273,7 +1283,7 @@
   
   (define (build-ifs)
     (blocks->IFS west south unit-size (get-field managed-objects m)))
-
+  
   (define (update-ifs-detail-display block hint-key hint)
     (define object (send m get-active-object))
     (define at (block->affine-transformation west south unit-size object))
@@ -1284,7 +1294,7 @@
     (define b (affine-transformation-b at))
     (define c (affine-transformation-c at))
     (define d (affine-transformation-d at))
-
+    
     (send t set-value
           (string-append
            (format 
@@ -1296,7 +1306,7 @@
                        (plane-point-x fp)
                        (plane-point-y fp) )
                ""))) )
-          
+  
   (define (update-preview object hint-key hint)
     (send preview-canvas set-affine-transformations (build-ifs)))
   
@@ -1320,7 +1330,7 @@
   
   ; to get started:
   (sierpinski-blocks m)
-
+  
   (new button%
        [parent button-box]
        [label "Clear"]
@@ -1346,8 +1356,8 @@
                 (send m add-managed-object
                       (affine-transformation->block at)))
               ats-mementos)]) )])
-
-    (new button%
+  
+  (new button%
        [parent button-box]
        [label "Save"]
        [callback
@@ -1360,7 +1370,7 @@
               )
             #:exists 'replace)
           )])
-
+  
   (new button%
        [parent button-box]
        [label "Add"]
@@ -1394,14 +1404,14 @@
                  [when-done-callback
                   (lambda () (send f set-cursor #f))])) 
           (send f show #t))])
-
+  
   (new button%
        [parent button-box]
        [label "Render"]
        [callback
         (lambda (button event)
           (run-render-dialog frame (build-ifs)))])
-           
+  
   (send frame show #t))
 
 ; main
